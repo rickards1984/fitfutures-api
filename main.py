@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.routers import auth
 
 app = FastAPI(
     title="FitFutures API",
@@ -29,6 +30,5 @@ def health() -> dict:
     return {"status": "ok", "service": "fitfutures-api", "version": app.version}
 
 
-# Routers are mounted here as each phase lands, e.g.:
-# from app.routers import placements
-# app.include_router(placements.router, prefix="/v1")
+# Routers are mounted under /v1 as each phase lands.
+app.include_router(auth.router, prefix="/v1")
