@@ -148,3 +148,47 @@ class KpiTotalsResponse(BaseModel):
     placement_id: str
     weeks_logged: int
     lines: list[KpiTotalLine]
+
+
+# --- Weekly KPI entry -----------------------------------------------------
+
+
+class KpiWeekSubmitRequest(BaseModel):
+    """Body for POST /v1/kpi/placement/{id}/week/{n} — a week's actuals."""
+
+    actual_placement_hours: float = Field(default=0, ge=0)
+    actual_study_hours: float = Field(default=0, ge=0)
+    actual_member_conversations: int = Field(default=0, ge=0)
+    actual_ex_member_contacts: int = Field(default=0, ge=0)
+    actual_retention_saves: int = Field(default=0, ge=0)
+    actual_campaign_touches: int = Field(default=0, ge=0)
+    actual_tasters_booked: int = Field(default=0, ge=0)
+    actual_consultations: int = Field(default=0, ge=0)
+    actual_conversions: int = Field(default=0, ge=0)
+    reflection: Optional[str] = None
+    key_issue: Optional[str] = None
+    # Defaults to start_date + (n-1) weeks when omitted.
+    week_commencing: Optional[date] = None
+
+
+class KpiEntryResponse(BaseModel):
+    id: str
+    placement_id: str
+    week_number: int
+    week_commencing: date
+    actual_placement_hours: float
+    actual_study_hours: float
+    actual_member_conversations: int
+    actual_ex_member_contacts: int
+    actual_retention_saves: int
+    actual_campaign_touches: int
+    actual_tasters_booked: int
+    actual_consultations: int
+    actual_conversions: int
+    reflection: Optional[str] = None
+    key_issue: Optional[str] = None
+    overall_status: RAGStatus
+    ai_coach_message: Optional[str] = None
+    ai_coach_generated_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None

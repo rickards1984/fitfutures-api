@@ -74,6 +74,19 @@ def require_staff(supabase, user: AuthContext) -> None:
         )
 
 
+def assert_is_owner(placement: dict, user: AuthContext) -> None:
+    """Raise 403 unless the caller is the learner who owns the placement.
+
+    Weekly KPI submission is learner-only in MVP (matches the RLS insert policy
+    `is_own_placement`).
+    """
+    if placement.get("learner_id") != user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the placement owner can submit KPI entries.",
+        )
+
+
 def assert_can_view_placement(supabase, placement: dict, user: AuthContext) -> None:
     """Allow the owning learner, the assigned supervisor, or any tutor/admin."""
     if placement.get("learner_id") == user.user_id:
