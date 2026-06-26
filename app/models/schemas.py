@@ -37,6 +37,19 @@ class RAGStatus(str, Enum):
     no_entry = "no_entry"
 
 
+class TaskStatus(str, Enum):
+    not_started = "not_started"
+    in_progress = "in_progress"
+    complete = "complete"
+    not_applicable = "not_applicable"
+
+
+class UnitStatus(str, Enum):
+    not_started = "not_started"
+    in_progress = "in_progress"
+    complete = "complete"
+
+
 class HealthResponse(BaseModel):
     status: str
     service: str
@@ -192,3 +205,61 @@ class KpiEntryResponse(BaseModel):
     ai_coach_generated_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+
+# --- Units & tasks --------------------------------------------------------
+
+
+class UnitTaskOut(BaseModel):
+    id: str
+    unit_id: str
+    task_order: int
+    description: str
+    is_mandatory: bool
+    requires_evidence: bool
+    requires_supervisor_sign: bool
+
+
+class UnitOut(BaseModel):
+    id: str
+    unit_number: int
+    title: str
+    aim: str
+    is_mandatory: bool
+    suggested_hours_min: Optional[int] = None
+    suggested_hours_max: Optional[int] = None
+    route_applicability: str
+    tasks: list[UnitTaskOut]
+
+
+class UnitProgressOut(BaseModel):
+    unit_id: str
+    status: UnitStatus
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    tutor_signed_at: Optional[datetime] = None
+    supervisor_signed_at: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
+class TaskProgressOut(BaseModel):
+    unit_task_id: str
+    placement_id: str
+    status: TaskStatus
+    completed_at: Optional[datetime] = None
+    supervisor_initials: Optional[str] = None
+    supervisor_signed_at: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
+class PlacementProgressResponse(BaseModel):
+    placement_id: str
+    units: list[UnitProgressOut]
+    tasks: list[TaskProgressOut]
+
+
+class TaskStatusUpdateRequest(BaseModel):
+    """Body for PATCH /v1/progress/task/{task_id}."""
+
+    placement_id: str
+    status: TaskStatus

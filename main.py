@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers import auth, kpi, placements
+from app.routers import auth, kpi, placements, progress, units
 
 app = FastAPI(
     title="FitFutures API",
@@ -34,3 +34,5 @@ def health() -> dict:
 app.include_router(auth.router, prefix="/v1")
 app.include_router(placements.router, prefix="/v1")
 app.include_router(kpi.router, prefix="/v1")
+app.include_router(units.router, prefix="/v1")
+app.include_router(progress.router, prefix="/v1")
