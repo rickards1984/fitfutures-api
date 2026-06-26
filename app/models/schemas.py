@@ -263,3 +263,76 @@ class TaskStatusUpdateRequest(BaseModel):
 
     placement_id: str
     status: TaskStatus
+
+
+# --- Evidence -------------------------------------------------------------
+
+
+class EvidenceUploadUrlRequest(BaseModel):
+    placement_id: str
+    filename: str = Field(min_length=1, max_length=255)
+    content_type: Optional[str] = None
+
+
+class EvidenceUploadUrlResponse(BaseModel):
+    bucket: str
+    path: str
+    token: str
+    signed_url: str
+
+
+class EvidenceCreateRequest(BaseModel):
+    """Record an evidence item after the file has been uploaded."""
+
+    placement_id: str
+    path: str  # storage object path returned by the upload-url step
+    title: str = Field(min_length=1, max_length=200)
+    file_type: str
+    file_size_bytes: Optional[int] = None
+    unit_task_id: Optional[str] = None
+    description: Optional[str] = None
+
+
+class EvidenceItemResponse(BaseModel):
+    id: str
+    placement_id: str
+    unit_task_id: Optional[str] = None
+    kpi_entry_id: Optional[str] = None
+    title: str
+    description: Optional[str] = None
+    file_url: str  # storage object path
+    file_type: str
+    file_size_bytes: Optional[int] = None
+    uploaded_by: str
+    supervisor_approved: Optional[bool] = None
+    supervisor_approved_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    # Short-lived signed URL for display/download (computed on read).
+    download_url: Optional[str] = None
+
+
+# --- Business milestones --------------------------------------------------
+
+
+class BusinessMilestoneResponse(BaseModel):
+    id: str
+    placement_id: str
+    milestone_key: str
+    title: str
+    status: TaskStatus
+    target_date: Optional[date] = None
+    completed_at: Optional[datetime] = None
+    evidence_notes: Optional[str] = None
+    blocking_issue: Optional[str] = None
+    next_action: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+class BusinessMilestoneUpdateRequest(BaseModel):
+    """Partial update — only provided fields are written."""
+
+    status: Optional[TaskStatus] = None
+    evidence_notes: Optional[str] = None
+    target_date: Optional[date] = None
+    next_action: Optional[str] = None
