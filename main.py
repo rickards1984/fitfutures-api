@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.routers import (
     auth,
     business,
+    coach,
     evidence,
     kpi,
     placements,
@@ -46,3 +47,4 @@ app.include_router(units.router, prefix="/v1")
 app.include_router(progress.router, prefix="/v1")
 app.include_router(evidence.router, prefix="/v1")
 app.include_router(business.router, prefix="/v1")
+app.include_router(coach.router, prefix="/v1")

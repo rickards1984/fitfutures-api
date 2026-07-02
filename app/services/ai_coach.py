@@ -30,6 +30,24 @@ Rules:
 
 Route: {route} | Week {week_number} of {planned_weeks}"""
 
+# Chat-mode system prompt (brief §6). Same direct-mentor guardrails, but a
+# back-and-forth conversation: ≤150 words, stays on programme accountability.
+CHAT_SYSTEM_PROMPT = """You are the FitFutures accountability coach, powered by UKFI. You are having a
+back-and-forth conversation with a learner on their CPD placement.
+
+Rules:
+- Never sycophantic. Do not congratulate low effort.
+- Direct, honest, practical — a mentor, not a cheerleader.
+- Stay on programme accountability: weekly KPIs, the 6 units, evidence, and
+  starting their own business. Do NOT give generic fitness, medical, legal or
+  financial advice — redirect to the programme if asked.
+- Reference the learner's actual data (below) when relevant.
+- If they are behind, say so directly and suggest ONE specific next action.
+- Where the learner is near qualifying, prompt them on a business start-up step.
+- Max 150 words. Plain English. No bullet points unless they ask for a list.
+
+Route: {route} | Week {week_number} of {planned_weeks}"""
+
 _ROUTE_LABELS = {"route_a": "Route A", "route_b": "Route B"}
 
 
@@ -81,7 +99,63 @@ def build_auto_message_messages(context: dict) -> list[dict]:
     ]
 
 
-def generate_coach_response(messages: list[dict], context: Optional[dict] = None) -> str:
+def render_context_snapshot(context: dict) -> str:
+    """Human-readable data block injected into chat-mode prompts."""
+    lines: list[str] = []
+
+    totals = context.get("kpi_totals") or []
+    if totals:
+        lines.append("Cumulative KPIs (actual / placement target):")
+        lines += [f"- {t['label']}: {t['actual']} / {t['target']}" for t in totals]
+    latest = context.get("latest_week")
+    if latest:
+        lines.append(
+            f"Latest logged week: week {latest['week_number']}"
+            f" (overall {latest['overall_status']})."
+        )
+    units = context.get("units")
+    if units:
+        lines.append(
+            f"Units: {units.get('complete', 0)} complete,"
+            f" {units.get('in_progress', 0)} in progress,"
+            f" {units.get('not_started', 0)} not started (of 6)."
+        )
+    business = context.get("business")
+    if business:
+        lines.append(
+            f"Business milestones: {business.get('complete', 0)} complete,"
+            f" {business.get('in_progress', 0)} in progress,"
+            f" {business.get('not_started', 0)} not started."
+        )
+        if business.get("next_up"):
+            lines.append("Outstanding milestones: " + ", ".join(business["next_up"]) + ".")
+    return "\n".join(lines) if lines else "No KPI, unit or milestone data logged yet."
+
+
+def build_chat_messages(
+    context: dict, history: list[dict], user_message: str
+) -> list[dict]:
+    """Assemble the chat-mode messages: system + data snapshot + history + new."""
+    system = CHAT_SYSTEM_PROMPT.format(
+        route=_ROUTE_LABELS.get(context.get("route"), context.get("route")),
+        week_number=context.get("week_number"),
+        planned_weeks=context.get("planned_weeks"),
+    )
+    messages: list[dict] = [
+        {"role": "system", "content": system},
+        {"role": "system", "content": "Current learner data:\n" + render_context_snapshot(context)},
+    ]
+    for h in history:
+        messages.append({"role": h["role"], "content": h["content"]})
+    messages.append({"role": "user", "content": user_message})
+    return messages
+
+
+def generate_coach_response(
+    messages: list[dict],
+    context: Optional[dict] = None,
+    max_completion_tokens: int = 220,
+) -> str:
     """Generate a coach reply, trying providers in order until one succeeds.
 
     OpenAI is live; Anthropic and Gemini are scaffolded and skipped (they raise
@@ -91,7 +165,7 @@ def generate_coach_response(messages: list[dict], context: Optional[dict] = None
     last_error: Optional[Exception] = None
     for provider in providers:
         try:
-            return provider(messages)
+            return provider(messages, max_completion_tokens)
         except NotImplementedError:
             continue  # scaffold-only provider
         except Exception as exc:  # noqa: BLE001 — fall through to next provider
@@ -102,7 +176,7 @@ def generate_coach_response(messages: list[dict], context: Optional[dict] = None
     )
 
 
-def _call_openai(messages: list[dict]) -> str:
+def _call_openai(messages: list[dict], max_completion_tokens: int) -> str:
     """Primary provider. Pinned model from env; timeout=30, max_retries=1."""
     if not settings.openai_api_key:
         raise RuntimeError("OPENAI_API_KEY is not configured.")
@@ -114,17 +188,17 @@ def _call_openai(messages: list[dict]) -> str:
         messages=messages,
         temperature=0.5,
         # GPT-5.x rejects `max_tokens`; use `max_completion_tokens`.
-        max_completion_tokens=220,
+        max_completion_tokens=max_completion_tokens,
     )
     content = resp.choices[0].message.content or ""
     return content.strip()
 
 
-def _call_anthropic(messages: list[dict]) -> str:
+def _call_anthropic(messages: list[dict], max_completion_tokens: int) -> str:
     """Fallback provider — scaffolded only (not wired for MVP)."""
     raise NotImplementedError("Anthropic fallback is scaffolded but not wired.")
 
 
-def _call_gemini(messages: list[dict]) -> str:
+def _call_gemini(messages: list[dict], max_completion_tokens: int) -> str:
     """Fallback provider — scaffolded only (not wired for MVP)."""
     raise NotImplementedError("Gemini fallback is scaffolded but not wired.")

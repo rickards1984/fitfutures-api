@@ -336,3 +336,23 @@ class BusinessMilestoneUpdateRequest(BaseModel):
     evidence_notes: Optional[str] = None
     target_date: Optional[date] = None
     next_action: Optional[str] = None
+
+
+# --- Coach chat -----------------------------------------------------------
+
+
+class CoachMessageOut(BaseModel):
+    id: str
+    placement_id: str
+    role: str  # 'user' | 'assistant'
+    content: str
+    created_at: Optional[datetime] = None
+
+
+class CoachChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=2000)
+
+
+class CoachChatResponse(BaseModel):
+    user_message: CoachMessageOut
+    assistant_message: CoachMessageOut
