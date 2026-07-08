@@ -356,3 +356,36 @@ class CoachChatRequest(BaseModel):
 class CoachChatResponse(BaseModel):
     user_message: CoachMessageOut
     assistant_message: CoachMessageOut
+
+
+# --- Web push -------------------------------------------------------------
+
+
+class PushKeys(BaseModel):
+    p256dh: str
+    auth: str
+
+
+class PushSubscribeRequest(BaseModel):
+    """The browser PushSubscription JSON (endpoint + keys)."""
+
+    endpoint: str
+    keys: PushKeys
+
+
+class PushUnsubscribeRequest(BaseModel):
+    endpoint: str
+
+
+class SimpleStatusResponse(BaseModel):
+    ok: bool
+    detail: Optional[str] = None
+
+
+class ReminderRunResponse(BaseModel):
+    """Summary of an /internal/reminders/run pass."""
+
+    active_placements: int
+    nudged: int
+    skipped: int
+    failed: int

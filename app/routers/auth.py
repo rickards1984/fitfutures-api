@@ -15,6 +15,26 @@ from app.models.schemas import ProfileResponse, ProfileUpsertRequest
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+@router.get("/profile", response_model=ProfileResponse)
+async def get_profile(
+    user: AuthContext = Depends(get_current_user),
+) -> ProfileResponse:
+    """Return the caller's current profile (e.g. to read opt-in state)."""
+    supabase = get_supabase()
+    res = await run_in_threadpool(
+        lambda: supabase.table("profiles")
+        .select("*")
+        .eq("id", user.user_id)
+        .limit(1)
+        .execute()
+    )
+    if not res.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found."
+        )
+    return ProfileResponse(**res.data[0])
+
+
 @router.post("/profile", response_model=ProfileResponse)
 async def upsert_profile(
     body: ProfileUpsertRequest,

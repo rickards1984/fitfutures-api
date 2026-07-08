@@ -12,9 +12,11 @@ from app.routers import (
     business,
     coach,
     evidence,
+    internal,
     kpi,
     placements,
     progress,
+    push,
     units,
 )
 
@@ -48,3 +50,7 @@ app.include_router(progress.router, prefix="/v1")
 app.include_router(evidence.router, prefix="/v1")
 app.include_router(business.router, prefix="/v1")
 app.include_router(coach.router, prefix="/v1")
+app.include_router(push.router, prefix="/v1")
+
+# Internal cron endpoints (secret-guarded, not under /v1).
+app.include_router(internal.router)
