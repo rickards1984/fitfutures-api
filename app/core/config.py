@@ -37,6 +37,16 @@ class Settings(BaseSettings):
     vapid_private_key: str = ""
     vapid_subject: str = ""
 
+    # Email briefings (Resend)
+    resend_api_key: str = ""
+    briefing_from_email: str = ""
+    briefing_to_emails_raw: str = Field(
+        default="", validation_alias="BRIEFING_TO_EMAILS"
+    )
+    # Weekday the weekly cohort digest sends on (0=Mon … 6=Sun). The cron runs
+    # daily; the digest only fires when today matches this.
+    briefing_digest_weekday: int = 0
+
     # App
     cors_origins_raw: str = Field(
         default="http://localhost:5173", validation_alias="CORS_ORIGINS"
@@ -46,6 +56,12 @@ class Settings(BaseSettings):
     @property
     def cors_origins(self) -> list[str]:
         return [o.strip() for o in self.cors_origins_raw.split(",") if o.strip()]
+
+    @property
+    def briefing_to_emails(self) -> list[str]:
+        return [
+            e.strip() for e in self.briefing_to_emails_raw.split(",") if e.strip()
+        ]
 
 
 @lru_cache

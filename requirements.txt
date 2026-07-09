@@ -10,3 +10,4 @@ PyJWT==2.10.1
 cryptography==49.0.0          # ES256 (asymmetric) Supabase JWT verification
 twilio==9.4.1
 pywebpush==2.0.1
+resend==2.32.2               # manager email briefings (Phase 7B-ii)

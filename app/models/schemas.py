@@ -383,9 +383,23 @@ class SimpleStatusResponse(BaseModel):
 
 
 class ReminderRunResponse(BaseModel):
-    """Summary of an /internal/reminders/run pass."""
+    """Summary of an /internal/reminders/run pass.
 
+    Covers all three channels handled by the daily cron: web-push nudges, the
+    weekly cohort digest, and red-RAG alert emails.
+    """
+
+    # Web-push weekly-checkin nudges
     active_placements: int
     nudged: int
     skipped: int
     failed: int
+
+    # Weekly cohort digest email
+    digest: str = "not_run"
+    digest_placements: Optional[int] = None
+
+    # Red-RAG alert emails
+    red_alerts_sent: int = 0
+    red_alerts_skipped: int = 0
+    red_alerts_failed: int = 0
