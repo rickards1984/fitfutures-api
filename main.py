@@ -11,6 +11,7 @@ from app.routers import (
     auth,
     business,
     coach,
+    completion,
     evidence,
     internal,
     kpi,
@@ -50,6 +51,7 @@ app.include_router(progress.router, prefix="/v1")
 app.include_router(evidence.router, prefix="/v1")
 app.include_router(business.router, prefix="/v1")
 app.include_router(coach.router, prefix="/v1")
+app.include_router(completion.router, prefix="/v1")
 app.include_router(push.router, prefix="/v1")
 
 # Internal cron endpoints (secret-guarded, not under /v1).

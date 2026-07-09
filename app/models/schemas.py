@@ -403,3 +403,65 @@ class ReminderRunResponse(BaseModel):
     red_alerts_sent: int = 0
     red_alerts_skipped: int = 0
     red_alerts_failed: int = 0
+
+
+# --- Completion -----------------------------------------------------------
+
+
+class CompletionDecision(str, Enum):
+    pending = "pending"
+    pass_ = "pass"
+    refer = "refer"
+
+
+class DecisionInput(str, Enum):
+    """The two decisions a tutor can record (pending is the initial state)."""
+
+    pass_ = "pass"
+    refer = "refer"
+
+
+class CompletionSubmitRequest(BaseModel):
+    """Body for POST /v1/completion/placement/{id}/submit (learner)."""
+
+    final_reflection: str = Field(min_length=1, max_length=5000)
+
+
+class CompletionDecideRequest(BaseModel):
+    """Body for POST /v1/completion/placement/{id}/decide (tutor/admin)."""
+
+    decision: DecisionInput
+    feedback: Optional[str] = Field(default=None, max_length=5000)
+
+
+class CompletionReviewResponse(BaseModel):
+    placement_id: str
+    learner_final_reflection: Optional[str] = None
+    tutor_decision: CompletionDecision = CompletionDecision.pending
+    tutor_feedback: Optional[str] = None
+    tutor_id: Optional[str] = None
+    decided_at: Optional[datetime] = None
+    certificate_triggered: bool = False
+    certificate_triggered_at: Optional[datetime] = None
+    # Denormalised for the UI so it need not fetch the placement separately.
+    placement_status: PlacementStatus
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+class CompletionRosterItem(BaseModel):
+    """One learner's completion state, for the tutor/admin picker."""
+
+    placement_id: str
+    learner_name: str
+    facility_name: str
+    placement_status: PlacementStatus
+    current_week_number: int
+    planned_weeks: int
+    decision: CompletionDecision
+    reflection_submitted: bool
+    certificate_triggered: bool
+
+
+class CompletionRosterResponse(BaseModel):
+    items: list[CompletionRosterItem]

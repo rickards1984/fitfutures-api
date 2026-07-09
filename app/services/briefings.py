@@ -27,6 +27,7 @@ logger = logging.getLogger("fitfutures.briefings")
 EMAIL_CHANNEL = "email"
 WEEKLY_DIGEST = "weekly_digest"
 RED_RAG_ALERT = "red_rag_alert"
+CERTIFICATE_READY = "certificate_ready"
 
 # Red-RAG alerts only look at the current and immediately preceding programme
 # week, so a first run never floods managers with alerts for historical reds.
@@ -294,6 +295,24 @@ def run_red_rag_alerts(supabase) -> dict:
     return {"red_alerts_sent": sent, "red_alerts_skipped": skipped, "red_alerts_failed": failed}
 
 
+# --- Certificate-ready notification ---------------------------------------
+
+
+def send_certificate_ready(
+    learner_name: str,
+    facility_name: str,
+    route_label: str,
+    decided_by: str,
+) -> str:
+    """Email managers that a learner has passed and needs a Focus Awards CPD
+    certificate issued. Returns the send status ('sent'/'failed'/'skipped');
+    never raises.
+    """
+    subject = f"🎓 Certificate needed — {learner_name} has passed"
+    html = _certificate_html(learner_name, facility_name, route_label, decided_by)
+    return send_email(subject, html)
+
+
 def _behind_metrics(entry: dict, placement: dict) -> list[dict]:
     """RAG-counting metrics that are amber/red vs the weekly target this week."""
     behind = []
@@ -454,6 +473,44 @@ def _red_rag_html(
         f"{metrics_table}{notes}"
     )
     return _shell(f"Red-RAG alert · Week {week}", intro, body)
+
+
+def _certificate_html(
+    learner_name: str, facility_name: str, route_label: str, decided_by: str
+) -> str:
+    rows = [
+        ("Learner", learner_name),
+        ("Facility", facility_name),
+        ("Route", route_label),
+        ("Decision", "Pass"),
+        ("Decided by", decided_by),
+        ("Date", f"{date.today():%d %b %Y}"),
+    ]
+    cells = ""
+    for label, value in rows:
+        cells += (
+            f'<tr>'
+            f'<td style="padding:8px 12px;font-size:13px;color:{_MUTED};'
+            f'border-bottom:1px solid {_BORDER};white-space:nowrap;">{label}</td>'
+            f'<td style="padding:8px 12px;font-size:14px;color:{_TEXT};'
+            f'border-bottom:1px solid {_BORDER};">{_esc(value)}</td>'
+            f'</tr>'
+        )
+    table = (
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        f'style="border-collapse:collapse;margin-bottom:16px;">{cells}</table>'
+    )
+    action = (
+        f'<div style="padding:14px 16px;background:{_BG};border:1px solid '
+        f'{RAG_COLORS["green"]};border-radius:8px;font-size:14px;color:{_TEXT};">'
+        f'<strong style="font-weight:500;color:{RAG_COLORS["green"]};">Action:</strong> '
+        f'issue a Focus Awards CPD certificate for {_esc(learner_name)}.</div>'
+    )
+    return _shell(
+        "Learner passed — certificate needed",
+        f"{_esc(learner_name)} has completed their FitFutures placement.",
+        table + action,
+    )
 
 
 def _note_block(label: str, text: str) -> str:
