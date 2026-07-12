@@ -465,3 +465,60 @@ class CompletionRosterItem(BaseModel):
 
 class CompletionRosterResponse(BaseModel):
     items: list[CompletionRosterItem]
+
+
+# --- Admin (Phase 9a: enrolment + roster) ---------------------------------
+
+
+class AdminLearnerItem(BaseModel):
+    """A learner in the admin roster, flagged for enrolment status."""
+
+    id: str
+    full_name: str
+    email: str
+    created_at: Optional[datetime] = None
+    has_active_placement: bool
+
+
+class AdminLearnersResponse(BaseModel):
+    items: list[AdminLearnerItem]
+
+
+class AdminPlacementItem(BaseModel):
+    """One active placement in the admin roster."""
+
+    placement_id: str
+    learner_id: str
+    learner_name: str
+    facility_name: str
+    route: LearnerRoute
+    current_week_number: int
+    planned_weeks: int
+    latest_rag: RAGStatus
+
+
+class AdminPlacementsResponse(BaseModel):
+    items: list[AdminPlacementItem]
+
+
+class AdminUnitProgressItem(BaseModel):
+    unit_number: int
+    title: str
+    status: UnitStatus
+
+
+class AdminLearnerSummary(BaseModel):
+    """Read-only detail for one learner's active placement."""
+
+    learner_id: str
+    learner_name: str
+    placement_id: str
+    facility_name: str
+    route: LearnerRoute
+    current_week_number: int
+    planned_weeks: int
+    weeks_logged: int
+    kpi_lines: list[KpiTotalLine]
+    units: list[AdminUnitProgressItem]
+    units_complete: int
+    units_total: int

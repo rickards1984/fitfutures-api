@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.routers import (
+    admin,
     auth,
     business,
     coach,
@@ -52,6 +53,7 @@ app.include_router(evidence.router, prefix="/v1")
 app.include_router(business.router, prefix="/v1")
 app.include_router(coach.router, prefix="/v1")
 app.include_router(completion.router, prefix="/v1")
+app.include_router(admin.router, prefix="/v1")
 app.include_router(push.router, prefix="/v1")
 
 # Internal cron endpoints (secret-guarded, not under /v1).
