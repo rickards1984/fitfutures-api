@@ -306,9 +306,23 @@ class EvidenceItemResponse(BaseModel):
     uploaded_by: str
     supervisor_approved: Optional[bool] = None
     supervisor_approved_at: Optional[datetime] = None
+    # Feedback note from staff, shown to the learner when changes are requested.
+    review_feedback: Optional[str] = None
     created_at: Optional[datetime] = None
     # Short-lived signed URL for display/download (computed on read).
     download_url: Optional[str] = None
+
+
+class EvidenceReviewRequest(BaseModel):
+    """Body for PATCH /v1/admin/evidence/{id}/review (tutor/admin).
+
+    `approved=True` marks the item approved; `approved=False` requests changes.
+    The feedback note is optional but surfaces to the learner when changes are
+    requested.
+    """
+
+    approved: bool
+    feedback: Optional[str] = Field(default=None, max_length=2000)
 
 
 # --- Business milestones --------------------------------------------------
@@ -495,6 +509,9 @@ class AdminPlacementItem(BaseModel):
     current_week_number: int
     planned_weeks: int
     latest_rag: RAGStatus
+    # Assessor attention signals (Phase 9b).
+    evidence_awaiting_review: int = 0
+    tasks_completed_since_review: int = 0
 
 
 class AdminPlacementsResponse(BaseModel):
@@ -522,3 +539,65 @@ class AdminLearnerSummary(BaseModel):
     units: list[AdminUnitProgressItem]
     units_complete: int
     units_total: int
+
+
+# --- Admin (Phase 9b: evidence review + assessment checklist) --------------
+
+
+class AdminEvidenceItem(BaseModel):
+    """One evidence item as seen by an assessor: file + who/when + review state."""
+
+    id: str
+    title: str
+    description: Optional[str] = None
+    file_type: str
+    unit_task_id: Optional[str] = None
+    task_description: Optional[str] = None
+    uploaded_by_name: str
+    created_at: Optional[datetime] = None
+    supervisor_approved: Optional[bool] = None
+    supervisor_approved_at: Optional[datetime] = None
+    review_feedback: Optional[str] = None
+    reviewed_by_name: Optional[str] = None
+    # Short-lived signed URL for display/download (computed on read).
+    download_url: Optional[str] = None
+
+
+class AdminEvidenceUnitGroup(BaseModel):
+    """Evidence items grouped under one unit (unit_number None = general)."""
+
+    unit_number: Optional[int] = None
+    title: str
+    items: list[AdminEvidenceItem]
+
+
+class AdminEvidenceResponse(BaseModel):
+    placement_id: str
+    learner_name: str
+    groups: list[AdminEvidenceUnitGroup]
+
+
+class AdminChecklistTask(BaseModel):
+    """One task on the read-only assessment checklist."""
+
+    task_order: int
+    description: str
+    is_mandatory: bool
+    requires_evidence: bool
+    requires_supervisor_sign: bool
+    status: TaskStatus
+    supervisor_signed: bool
+    evidence_count: int
+
+
+class AdminChecklistUnit(BaseModel):
+    unit_number: int
+    title: str
+    status: UnitStatus
+    tasks: list[AdminChecklistTask]
+
+
+class AdminChecklistResponse(BaseModel):
+    placement_id: str
+    learner_name: str
+    units: list[AdminChecklistUnit]
